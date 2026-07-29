@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exam Practice</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+  :root{
+    --ink:#1c2333;
+    --paper:#f6f4ee;
+    --card:#ffffff;
+    --line:#e3ddd0;
+    --accent:#2f6f5e;
+    --accent-dark:#234f43;
+    --wrong:#b3452e;
+    --right:#2f6f5e;
+    --muted:#6b6458;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    min-height:100vh;
+  }
+  .wrap{
+    max-width:720px;
+    margin:0 auto;
+    padding:20px 16px 60px;
+  }
+  header{
+    text-align:center;
+    padding:18px 0 10px;
+  }
+  header h1{
+    font-size:1.5rem;
+    margin:0 0 4px;
+    letter-spacing:0.2px;
+  }
+  header p{
+    margin:0;
+    color:var(--muted);
+    font-size:0.9rem;
+  }
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:20px;
+    margin-top:16px;
+    box-shadow:0 1px 3px rgba(0,0,0,0.04);
+  }
+  .upload-zone{
+    border:2px dashed var(--line);
+    border-radius:var(--radius);
+    padding:36px 20px;
+    text-align:center;
+    background:var(--card);
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .upload-zone:hover, .upload-zone.drag{
+    border-color:var(--accent);
+    background:#f0f7f4;
+  }
+  .upload-zone input{display:none;}
+  .upload-icon{font-size:2rem;margin-bottom:8px;}
+  .upload-zone .hint{color:var(--muted);font-size:0.85rem;margin-top:6px;}
+  .btn{
+    display:inline-block;
+    border:none;
+    border-radius:10px;
+    padding:12px 20px;
+    font-size:0.95rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:transform .08s ease, opacity .15s ease;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:hover{background:var(--accent-dark);}
+  .btn-secondary{background:#eee8da;color:var(--ink);}
+  .btn-secondary:hover{background:#e4dcc9;}
+  .btn:disabled{opacity:0.4;cursor:not-allowed;}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
+  .btn-row .btn{flex:1;min-width:100px;}
+  .progress-bar{
+    height:6px;
+    background:var(--line);
+    border-radius:99px;
+    overflow:hidden;
+    margin:14px 0 4px;
+  }
+  .progress-fill{
+    height:100%;
+    background:var(--accent);
+    transition:width .25s ease;
+  }
+  .progress-label{
+    display:flex;
+    justify-content:space-between;
+    font-size:0.8rem;
+    color:var(--muted);
+  }
+  .q-text{
+    font-size:1.1rem;
+    line-height:1.5;
+    margin:10px 0 18px;
+    font-weight:600;
+  }
+  .choice{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    padding:13px 14px;
+    margin-bottom:10px;
+    cursor:pointer;
+    transition:border-color .12s ease, background .12s ease;
+  }
+  .choice:hover{border-color:var(--accent);}
+  .choice.selected{
+    border-color:var(--accent);
+    background:#f0f7f4;
+  }
+  .choice .letter{
+    width:28px;height:28px;
+    border-radius:50%;
+    background:var(--line);
+    color:var(--ink);
+    display:flex;align-items:center;justify-content:center;
+    font-size:0.85rem;font-weight:700;
+    flex-shrink:0;
+  }
+  .choice.selected .letter{
+    background:var(--accent);
+    color:#fff;
+  }
+  .choice .ctext{font-size:0.98rem;line-height:1.4;}
+  .top-controls{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    margin-bottom:6px;
+  }
+  .link-btn{
+    background:none;border:none;color:var(--muted);
+    font-size:0.85rem;text-decoration:underline;cursor:pointer;
+    padding:4px;
+  }
+  .toggle-row{
+    display:flex;align-items:center;gap:8px;
+    font-size:0.9rem;color:var(--muted);
+    margin-top:14px;
+  }
+  .toggle-row input{width:16px;height:16px;}
+  .score-hero{
+    text-align:center;
+    padding:10px 0 6px;
+  }
+  .score-hero .big{
+    font-size:2.8rem;
+    font-weight:800;
+    color:var(--accent);
+    line-height:1;
+  }
+  .score-hero .pct{
+    font-size:1.1rem;
+    color:var(--muted);
+    margin-top:6px;
+  }
+  .review-item{
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px;
+    margin-top:12px;
+  }
+  .review-item.correct{border-left:4px solid var(--right);}
+  .review-item.incorrect{border-left:4px solid var(--wrong);}
+  .review-q{font-weight:600;margin-bottom:8px;}
+  .review-line{font-size:0.92rem;margin:4px 0;}
+  .tag-correct{color:var(--right);font-weight:700;}
+  .tag-incorrect{color:var(--wrong);font-weight:700;}
+  .badge{
+    display:inline-block;
+    font-size:0.7rem;
+    font-weight:700;
+    padding:2px 8px;
+    border-radius:99px;
+    margin-left:6px;
+  }
+  .badge.correct{background:#e2f1ec;color:var(--right);}
+  .badge.incorrect{background:#f7e6e1;color:var(--wrong);}
+  .hidden{display:none !important;}
+  .error-box{
+    background:#f7e6e1;
+    border:1px solid #e3c3b8;
+    color:var(--wrong);
+    padding:12px 14px;
+    border-radius:10px;
+    font-size:0.9rem;
+    margin-top:14px;
+  }
+  .filename{font-size:0.85rem;color:var(--muted);margin-top:10px;}
+  .jump-nav{
+    display:flex;flex-wrap:wrap;gap:6px;margin-top:14px;
+  }
+  .jump-nav button{
+    width:34px;height:34px;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:#fff;
+    font-size:0.8rem;
+    cursor:pointer;
+  }
+  .jump-nav button.answered{background:#e9f3ef;border-color:var(--accent);}
+  .jump-nav button.current{outline:2px solid var(--accent);}
+  footer{
+    text-align:center;
+    color:var(--muted);
+    font-size:0.78rem;
+    margin-top:30px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Exam Practice</h1>
+    <p>Upload a .docx question bank and quiz yourself, anywhere, offline.</p>
+  </header>
+
+  <!-- UPLOAD SCREEN -->
+  <div id="screen-upload" class="card">
+    <div class="upload-zone" id="dropZone">
+      <div class="upload-icon">📄</div>
+      <div><strong>Click to upload</strong> or drag a .docx file here</div>
+      <div class="hint">Format: numbered questions, A–D choices, and an "Answer: X" line (or bold the correct choice).</div>
+      <input type="file" id="fileInput" accept=".docx">
+    </div>
+    <div id="uploadError" class="error-box hidden"></div>
+    <div id="fileNameLabel" class="filename hidden"></div>
+  </div>
+
+  <!-- QUIZ SETUP SCREEN -->
+  <div id="screen-setup" class="card hidden">
+    <div id="setupSummary"></div>
+    <div class="toggle-row">
+      <input type="checkbox" id="shuffleToggle" checked>
+      <label for="shuffleToggle">Shuffle question order each attempt</label>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="startBtn">Start Quiz</button>
+      <button class="btn btn-secondary" id="newFileBtn">Upload Different File</button>
+    </div>
+  </div>
+
+  <!-- QUIZ SCREEN -->
+  <div id="screen-quiz" class="card hidden">
+    <div class="progress-label">
+      <span id="progressText">Question 1 of 1</span>
+      <span id="answeredText">0 answered</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+
+    <div class="q-text" id="questionText"></div>
+    <div id="choicesList"></div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="prevBtn">◀ Previous</button>
+      <button class="btn btn-secondary" id="nextBtn">Next ▶</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="submitBtn">Submit Quiz</button>
+    </div>
+
+    <div class="jump-nav" id="jumpNav"></div>
+  </div>
+
+  <!-- RESULTS SCREEN -->
+  <div id="screen-results" class="card hidden">
+    <div class="score-hero">
+      <div class="big" id="scoreBig">0/0</div>
+      <div class="pct" id="scorePct">0%</div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" id="retakeBtn">Retake Quiz</button>
+      <button class="btn btn-secondary" id="uploadNewBtn">Upload New File</button>
+    </div>
+    <div id="reviewList"></div>
+  </div>
+
+  <footer>Runs entirely in your browser. Nothing is uploaded anywhere.</footer>
+</div>
+
+<script>
+(function(){
+  // ---------- State ----------
+  let masterQuestions = [];   // parsed from docx, fixed order, fixed choice order
+  let quizQuestions = [];     // working copy used for current attempt (may be shuffled)
+  let currentIndex = 0;
+  let answers = {};           // questionUid -> chosen index (in quizQuestions choice order)
+  let submitted = false;
+
+  const el = id => document.getElementById(id);
+  const screens = {
+    upload: el('screen-upload'),
+    setup: el('screen-setup'),
+    quiz: el('screen-quiz'),
+    results: el('screen-results')
+  };
+  function showScreen(name){
+    Object.values(screens).forEach(s => s.classList.add('hidden'));
+    screens[name].classList.remove('hidden');
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  // ---------- File upload ----------
+  const dropZone = el('dropZone');
+  const fileInput = el('fileInput');
+  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag');
+    if(e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener('change', e => {
+    if(e.target.files.length) handleFile(e.target.files[0]);
+  });
+
+  function showUploadError(msg){
+    const box = el('uploadError');
+    box.textContent = msg;
+    box.classList.remove('hidden');
+  }
+
+  function handleFile(file){
+    el('uploadError').classList.add('hidden');
+    if(!file.name.toLowerCase().endsWith('.docx')){
+      showUploadError('Please upload a .docx file.');
+      return;
+    }
+    el('fileNameLabel').textContent = 'Loaded: ' + file.name;
+    el('fileNameLabel').classList.remove('hidden');
+
+    const reader = new FileReader();
+    reader.onload = function(e){
+      mammoth.convertToHtml({arrayBuffer: e.target.result})
+        .then(result => {
+          try {
+            const parsed = parseQuestionsFromHtml(result.value);
+            if(parsed.length === 0){
+              showUploadError('No questions could be detected. Make sure the document has numbered questions with A/B/C/D choices and an "Answer: X" line (or bold the correct choice).');
+              return;
+            }
+            masterQuestions = parsed;
+            goToSetup();
+          } catch(err){
+            showUploadError('Could not parse the document: ' + err.message);
+          }
+        })
+        .catch(err => showUploadError('Failed to read .docx file: ' + err.message));
+    };
+    reader.onerror = () => showUploadError('Failed to read the file.');
+    reader.readAsArrayBuffer(file);
+  }
+
+  // ---------- Parsing ----------
+  // Turns mammoth HTML into an array of {text, bold} paragraph-ish lines.
+  function extractLines(html){
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    const lines = [];
+    const blocks = container.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6');
+    const nodesToScan = blocks.length ? blocks : [container];
+    nodesToScan.forEach(block => {
+      const text = block.textContent.replace(/\s+/g, ' ').trim();
+      if(!text) return;
+      // consider "entirely bold" if every non-empty text node's parent chain includes strong/b
+      // and there is at least one strong/b covering most of the content
+      const strongEls = block.querySelectorAll('strong, b');
+      let boldCoverage = 0;
+      strongEls.forEach(s => boldCoverage += s.textContent.length);
+      const isBold = strongEls.length > 0 && boldCoverage >= text.length * 0.6;
+      lines.push({text, bold: isBold});
+    });
+    return lines;
+  }
+
+  function parseQuestionsFromHtml(html){
+    const lines = extractLines(html);
+    const qStart = /^(?:Q\.?\s*)?(\d{1,3})[\.\)\:]\s*(.+)$/i;
+    const optStart = /^\(?([A-Da-d])\)?[\.\)]\s*(.+)$/;
+    const ansLine = /^(?:Answer|Ans|Correct Answer|Correct)\s*[:\-]\s*\(?([A-Da-d])\)?/i;
+
+    const questions = [];
+    let current = null;
+
+    function pushCurrent(){
+      if(current && current.choices.length >= 2){
+        // resolve correct index: explicit answer line takes priority, else bold choice
+        let correctIdx = current.answerLetterIdx !== null ? current.answerLetterIdx : current.boldIdx;
+        if(correctIdx === null || correctIdx === undefined || correctIdx < 0 || correctIdx >= current.choices.length){
+          correctIdx = null;
+        }
+        if(correctIdx !== null){
+          questions.push({
+            text: current.text,
+            choices: current.choices,
+            correctIndex: correctIdx
+          });
+        }
+      }
+      current = null;
+    }
+
+    for(let i=0;i<lines.length;i++){
+      const line = lines[i];
+      const t = line.text;
+
+      const qm = t.match(qStart);
+      const om = t.match(optStart);
+      const am = t.match(ansLine);
+
+      if(am && current){
+        const letter = am[1].toUpperCase();
+        current.answerLetterIdx = letter.charCodeAt(0) - 65;
+        continue;
+      }
+
+      if(om && current && !qm){
+        const letterIdx = om[1].toUpperCase().charCodeAt(0) - 65;
+        const optText = om[2].trim();
+        current.choices.push(optText);
+        if(line.bold){
+          current.boldIdx = current.choices.length - 1;
+        }
+        continue;
+      }
+
+      if(qm){
+        // heuristic: treat as a new question only if it doesn't look like an option line already handled
+        pushCurrent();
+        current = {
+          text: qm[2].trim(),
+          choices: [],
+          boldIdx: null,
+          answerLetterIdx: null
+        };
+        continue;
+      }
+
+      // continuation line: append to question text if no choices started yet,
+      // otherwise ignore (could be explanation text)
+      if(current && current.choices.length === 0 && t.length > 0){
+        current.text += ' ' + t;
+      }
+    }
+    pushCurrent();
+    return questions;
+  }
+
+  // ---------- Setup screen ----------
+  function goToSetup(){
+    el('setupSummary').innerHTML =
+      '<p style="margin:0 0 4px;font-size:1.05rem;"><strong>' + masterQuestions.length + ' questions</strong> detected.</p>' +
+      '<p style="margin:0;color:var(--muted);font-size:0.88rem;">Answer them one at a time, then submit to see your score and a full review.</p>';
+    showScreen('setup');
+  }
+
+  el('newFileBtn').addEventListener('click', () => {
+    el('fileNameLabel').classList.add('hidden');
+    fileInput.value = '';
+    showScreen('upload');
+  });
+  el('uploadNewBtn').addEventListener('click', () => {
+    el('fileNameLabel').classList.add('hidden');
+    fileInput.value = '';
+    showScreen('upload');
+  });
+
+  el('startBtn').addEventListener('click', startQuiz);
+  el('retakeBtn').addEventListener('click', startQuiz);
+
+  function shuffleArray(arr){
+    const a = arr.slice();
+    for(let i=a.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+
+  function startQuiz(){
+    const doShuffle = el('shuffleToggle').checked;
+    let base = masterQuestions.map((q, idx) => ({
+      uid: idx,
+      text: q.text,
+      choices: q.choices.map((c, ci) => ({ label: c, correct: ci === q.correctIndex }))
+    }));
+    if(doShuffle){
+      base = shuffleArray(base);
+      base.forEach(q => { q.choices = shuffleArray(q.choices); });
+    }
+    quizQuestions = base;
+    answers = {};
+    currentIndex = 0;
+    submitted = false;
+    renderQuestion();
+    buildJumpNav();
+    showScreen('quiz');
+  }
+
+  // ---------- Quiz rendering ----------
+  function renderQuestion(){
+    const q = quizQuestions[currentIndex];
+    el('questionText').textContent = (currentIndex+1) + '. ' + q.text;
+    const list = el('choicesList');
+    list.innerHTML = '';
+    const letters = ['A','B','C','D','E','F'];
+    q.choices.forEach((choice, i) => {
+      const div = document.createElement('div');
+      div.className = 'choice' + (answers[q.uid] === i ? ' selected' : '');
+      div.innerHTML = '<div class="letter">' + letters[i] + '</div><div class="ctext"></div>';
+      div.querySelector('.ctext').textContent = choice.label;
+      div.addEventListener('click', () => {
+        answers[q.uid] = i;
+        renderQuestion();
+        updateJumpNav();
+      });
+      list.appendChild(div);
+    });
+
+    el('progressText').textContent = 'Question ' + (currentIndex+1) + ' of ' + quizQuestions.length;
+    el('answeredText').textContent = Object.keys(answers).length + ' answered';
+    el('progressFill').style.width = (((currentIndex+1)/quizQuestions.length)*100) + '%';
+    el('prevBtn').disabled = currentIndex === 0;
+    el('nextBtn').disabled = currentIndex === quizQuestions.length - 1;
+    updateJumpNav();
+  }
+
+  function buildJumpNav(){
+    const nav = el('jumpNav');
+    nav.innerHTML = '';
+    quizQuestions.forEach((q, i) => {
+      const b = document.createElement('button');
+      b.textContent = i+1;
+      b.addEventListener('click', () => { currentIndex = i; renderQuestion(); });
+      nav.appendChild(b);
+    });
+    updateJumpNav();
+  }
+  function updateJumpNav(){
+    const nav = el('jumpNav');
+    Array.from(nav.children).forEach((btn, i) => {
+      btn.classList.toggle('current', i === currentIndex);
+      btn.classList.toggle('answered', answers[quizQuestions[i].uid] !== undefined);
+    });
+  }
+
+  el('prevBtn').addEventListener('click', () => { if(currentIndex>0){ currentIndex--; renderQuestion(); }});
+  el('nextBtn').addEventListener('click', () => { if(currentIndex<quizQuestions.length-1){ currentIndex++; renderQuestion(); }});
+  el('submitBtn').addEventListener('click', submitQuiz);
+
+  // ---------- Results ----------
+  function submitQuiz(){
+    submitted = true;
+    let correctCount = 0;
+    const reviewHtml = [];
+
+    quizQuestions.forEach((q, i) => {
+      const chosenIdx = answers[q.uid];
+      const correctIdx = q.choices.findIndex(c => c.correct);
+      const isCorrect = chosenIdx === correctIdx;
+      if(isCorrect) correctCount++;
+
+      const letters = ['A','B','C','D','E','F'];
+      const chosenLabel = chosenIdx !== undefined ? (letters[chosenIdx] + '. ' + q.choices[chosenIdx].label) : '— No answer selected';
+      const correctLabel = letters[correctIdx] + '. ' + q.choices[correctIdx].label;
+
+      reviewHtml.push(
+        '<div class="review-item ' + (isCorrect ? 'correct' : 'incorrect') + '">' +
+          '<div class="review-q">' + (i+1) + '. ' + escapeHtml(q.text) +
+            '<span class="badge ' + (isCorrect ? 'correct' : 'incorrect') + '">' + (isCorrect ? 'Correct' : 'Incorrect') + '</span>' +
+          '</div>' +
+          '<div class="review-line">Your answer: <span class="' + (isCorrect ? 'tag-correct' : 'tag-incorrect') + '">' + escapeHtml(chosenLabel) + '</span></div>' +
+          (isCorrect ? '' : '<div class="review-line">Correct answer: <span class="tag-correct">' + escapeHtml(correctLabel) + '</span></div>') +
+        '</div>'
+      );
+    });
+
+    const total = quizQuestions.length;
+    const pct = total ? Math.round((correctCount/total)*1000)/10 : 0;
+    el('scoreBig').textContent = correctCount + '/' + total;
+    el('scorePct').textContent = pct + '%';
+    el('reviewList').innerHTML = reviewHtml.join('');
+    showScreen('results');
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+})();
+</script>
+</body>
+</html>
