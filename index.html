@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExamMaster AI - Interactive Quiz & Document Study Platform</title>
+  <meta name="description" content="Upload documents, Word files with pictures, or paste questions to test your knowledge with instant scoring, randomized questions & choices, image support, and detailed answer breakdowns." />
+
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Mammoth.js for client-side Word DOCX + Embedded Image parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.8.0/mammoth.browser.min.js"></script>
+
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Ambient Background Glow -->
+  <div class="ambient-glow"></div>
+
+  <!-- Confetti Canvas for High Score Celebration -->
+  <canvas id="confetti-canvas" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999;"></canvas>
+
+  <!-- Main App Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <a href="#" class="brand-logo" id="brand-link">
+        <div class="logo-icon-wrapper">📝</div>
+        <div>
+          <span>ExamMaster</span>
+          <span class="brand-badge">PRO QUIZ</span>
+        </div>
+      </a>
+
+      <div class="header-actions">
+        <button id="btn-sound-toggle" class="btn btn-secondary btn-sm" title="Toggle audio feedback">🔊 Sound On</button>
+        <button id="btn-theme-toggle" class="btn btn-secondary btn-icon" title="Toggle Dark/Light Mode">
+          <span id="theme-toggle-icon">☀️</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-container">
+
+    <!-- =========================================================================
+         VIEW 1: Home / Document Upload / Quiz Setup
+         ========================================================================= -->
+    <section id="view-home" class="view-section active">
+      <div class="hero-banner">
+        <div class="hero-tag">✨ Complete Document & Image Quiz Solver</div>
+        <h1 class="hero-title">Practice & Master Any Exam <span class="text-gradient">From Your Files</span></h1>
+        <p class="hero-desc">
+          Drop your Word (.docx), PDF text, or JSON files with pictures and answer keys. Take the quiz interactively with randomized questions, get instant scoring, and review all correct and wrong answers!
+        </p>
+      </div>
+
+      <!-- Quick Quiz Settings Bar -->
+      <div class="card-glass" style="margin-bottom: 1.5rem; padding: 1.25rem 1.75rem;">
+        <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem;">
+          <div style="font-weight: 700; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span>⚙️ Quiz Preferences:</span>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 1.5rem;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.925rem; font-weight: 600;">
+              <input type="checkbox" id="chk-shuffle-questions" checked style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;" />
+              <span>🔀 Randomize Question Order</span>
+            </label>
+
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.925rem; font-weight: 600;">
+              <input type="checkbox" id="chk-shuffle-choices" checked style="width: 18px; height: 18px; accent-color: var(--primary); cursor: pointer;" />
+              <span>🔀 Randomize Choice Order (A-D)</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Upload Grid -->
+      <div class="upload-grid">
+        <!-- Dropzone Card -->
+        <div class="card-glass">
+          <input type="file" id="doc-file-input" accept=".docx,.txt,.json,.md" style="display: none;" />
+          <div class="dropzone-area" id="dropzone-area">
+            <div class="dropzone-icon">📁</div>
+            <div class="dropzone-title">Click or Drag & Drop Your Quiz File</div>
+            <div class="dropzone-subtitle">Word Documents (.docx) with embedded pictures, Text, or JSON</div>
+            <div class="supported-formats">
+              <span class="format-pill">📄 DOCX (Images Extracted)</span>
+              <span class="format-pill">📝 TXT / Markdown</span>
+              <span class="format-pill">⚙️ JSON Quiz</span>
+            </div>
+            <button class="btn btn-primary" type="button" onclick="document.getElementById('doc-file-input').click()">
+              Browse Files
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Paste & Mode Select Card -->
+        <div class="card-glass quick-paste-box">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <strong style="font-size: 1.05rem;">📋 Or Paste Raw Questions & Answers</strong>
+          </div>
+          <textarea id="paste-text-input" class="textarea-modern" placeholder="Paste questions like:
+1. What is shown in the diagram?
+A. Option 1
+*B. Option 2 (Correct)
+C. Option 3
+Answer: B
+Explanation: ..."></textarea>
+
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <div class="form-group" style="flex: 1;">
+              <label class="form-label" for="quiz-mode-select">Quiz Mode</label>
+              <select id="quiz-mode-select" class="input-modern" style="padding: 0.5rem;">
+                <option value="exam">Exam Mode (Score revealed at end)</option>
+                <option value="practice">Study Mode (Instant feedback & explanations)</option>
+              </select>
+            </div>
+            <button id="btn-parse-text" class="btn btn-primary" style="margin-top: 1.25rem;">
+              Parse & Start
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sample Quizzes Section -->
+      <div class="sample-quizzes-section">
+        <div class="section-header">
+          <div class="section-title">
+            <span>🌟 Ready-to-Play Sample Quizzes (With Diagrams & Pictures)</span>
+          </div>
+        </div>
+        <div class="sample-cards-grid" id="sample-quizzes-list">
+          <!-- Populated by sample-quizzes.js -->
+        </div>
+      </div>
+    </section>
+
+
+    <!-- =========================================================================
+         VIEW 2: Active Quiz Taking Experience
+         ========================================================================= -->
+    <section id="view-quiz" class="view-section">
+      <!-- Quiz Header Bar -->
+      <div class="quiz-header-bar">
+        <div class="quiz-meta-info">
+          <span class="quiz-title-tag" id="quiz-view-title">Active Quiz</span>
+        </div>
+
+        <div class="quiz-timer-pill" id="quiz-timer-display" title="Remaining Time">
+          15:00
+        </div>
+      </div>
+
+      <!-- Progress Track -->
+      <div class="progress-container">
+        <div class="progress-labels">
+          <span id="progress-counter-text">Question 1 of 10</span>
+          <span id="progress-percentage-text">10% Complete</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="quiz-progress-fill"></div>
+        </div>
+      </div>
+
+      <!-- Question Card -->
+      <div class="quiz-main-layout">
+        <div class="question-card">
+          <div class="question-top-row">
+            <span class="question-badge" id="question-number-badge">Question 1</span>
+            <div class="question-tools">
+              <button class="btn btn-sm btn-outline btn-flag" id="btn-flag-question" title="Bookmark to review later">
+                🏳️ Flag for Review
+              </button>
+            </div>
+          </div>
+
+          <!-- Question Text -->
+          <div class="question-text" id="question-text-content">
+            Question text loading...
+          </div>
+
+          <!-- Embedded / Uploaded Question Image Area -->
+          <div class="question-image-wrapper" id="question-image-container" style="display: none;">
+            <img id="question-image-element" class="question-image" alt="Question Diagram" />
+            <div class="image-caption-bar">
+              <span id="question-image-caption">Diagram Reference</span>
+              <span class="image-zoom-hint" id="zoom-hint-btn">🔍 Click to zoom full screen</span>
+            </div>
+          </div>
+
+          <!-- Choices Container -->
+          <div class="choices-container" id="choices-container">
+            <!-- Dynamic Choice Option Buttons injected here -->
+          </div>
+
+          <!-- Practice Mode Instant Explanation Box -->
+          <div class="instant-explanation-box" id="instant-explanation-box">
+            <div class="explanation-title" id="instant-exp-status">
+              💡 Explanation
+            </div>
+            <div id="instant-exp-text" style="color: var(--text-main); font-size: 0.95rem; line-height: 1.5;"></div>
+          </div>
+          <!-- In-Card Action Buttons (Directly below choices and explanation) -->
+          <div class="card-action-buttons">
+            <div class="card-action-left">
+              <button class="btn btn-secondary btn-in-card-prev" onclick="app.prevQuestion()">
+                ← Previous
+              </button>
+            </div>
+
+            <div class="keyboard-hint" style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem;">
+              <span>Press <kbd style="background: var(--bg-main); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-color); font-weight: 700;">Enter</kbd> or <kbd style="background: var(--bg-main); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--border-color); font-weight: 700;">→</kbd> for Next</span>
+            </div>
+
+            <div class="card-action-right">
+              <button class="btn btn-primary btn-in-card-next" id="btn-next-question-card" onclick="app.nextQuestion()">
+                Next Question →
+              </button>
+              <button class="btn btn-success btn-in-card-submit" id="btn-submit-quiz-card" onclick="app.promptSubmitQuiz()" style="display: none;">
+                Submit Quiz & View Score ✓
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- =========================================================================
+         VIEW 3: Results & Comprehensive Review
+         ========================================================================= -->
+    <section id="view-results" class="view-section">
+      <!-- Score Hero Card -->
+      <div class="results-header-card">
+        <div class="score-visual-wrapper">
+          <svg class="score-svg-ring" viewBox="0 0 160 160">
+            <defs>
+              <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#10b981" />
+                <stop offset="50%" stop-color="#38bdf8" />
+                <stop offset="100%" stop-color="#6366f1" />
+              </linearGradient>
+            </defs>
+            <circle class="score-circle-bg" cx="80" cy="80" r="70" />
+            <circle class="score-circle-progress" id="score-circle-svg" cx="80" cy="80" r="70" />
+          </svg>
+          <div class="score-inner-text">
+            <div class="score-percentage" id="res-score-percentage">0%</div>
+            <span class="score-grade-badge" id="res-grade-badge">Grade</span>
+          </div>
+        </div>
+
+        <h2 class="results-title">Quiz Completed!</h2>
+        <p class="results-motivational" id="res-motivational-text">
+          Review your performance breakdown and check which answers were correct or wrong below.
+        </p>
+      </div>
+
+      <!-- Stat Summary Grid -->
+      <div class="stat-summary-grid">
+        <div class="stat-pill-card">
+          <div class="stat-val" id="res-correct-count" style="color: var(--success);">0</div>
+          <div class="stat-label">Correct Answers</div>
+        </div>
+        <div class="stat-pill-card">
+          <div class="stat-val" id="res-wrong-count" style="color: var(--danger);">0</div>
+          <div class="stat-label">Wrong Answers</div>
+        </div>
+        <div class="stat-pill-card">
+          <div class="stat-val" id="res-skipped-count" style="color: var(--warning);">0</div>
+          <div class="stat-label">Skipped</div>
+        </div>
+        <div class="stat-pill-card">
+          <div class="stat-val" id="res-time-spent" style="color: var(--accent-cyan);">0m 0s</div>
+          <div class="stat-label">Time Spent</div>
+        </div>
+        <div class="stat-pill-card">
+          <div class="stat-val" id="res-accuracy-rate" style="color: var(--accent-purple);">0%</div>
+          <div class="stat-label">Accuracy</div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="results-actions-bar">
+        <button class="btn btn-primary" id="btn-practice-mistakes">
+          🎯 Practice Only Mistakes (Smart Retest)
+        </button>
+        <button class="btn btn-secondary" id="btn-retake-quiz">
+          🔄 Retake Full Quiz
+        </button>
+        <button class="btn btn-outline" id="btn-print-results">
+          🖨️ Print / Save PDF
+        </button>
+        <button class="btn btn-outline" id="btn-export-json">
+          💾 Export Quiz JSON
+        </button>
+      </div>
+
+      <!-- Detailed Review Section -->
+      <div class="card-glass" style="padding: 2rem;">
+        <div class="section-header">
+          <div class="section-title">
+            <span>📋 Detailed Question Review & Corrections</span>
+          </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="review-filter-bar">
+          <button class="filter-tab active" data-filter="all">All Questions</button>
+          <button class="filter-tab" data-filter="wrong" style="color: var(--danger);">❌ Incorrect & Skipped</button>
+          <button class="filter-tab" data-filter="correct" style="color: var(--success);">✓ Correct Only</button>
+          <button class="filter-tab" data-filter="flagged" style="color: var(--warning);">🚩 Flagged Only</button>
+        </div>
+
+        <!-- Review Cards List -->
+        <div class="review-items-list" id="review-cards-list">
+          <!-- Dynamic review cards injected here -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= Lightbox Image Modal ================= -->
+  <dialog id="lightbox-dialog" class="lightbox-dialog">
+    <div class="lightbox-container">
+      <button class="lightbox-close-btn" id="lightbox-close" title="Close">✕</button>
+      <img id="lightbox-image" class="lightbox-img" src="" alt="Enlarged Diagram" />
+      <div id="lightbox-caption" style="color: white; margin-top: 1rem; font-weight: 600; text-align: center;"></div>
+    </div>
+  </dialog>
+
+  <!-- Toast Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="sample-quizzes.js"></script>
+  <script src="parser.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
